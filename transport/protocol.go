@@ -25,4 +25,5 @@ const (
 	TAG_VALUE      = 0x05
 	TAG_INDEX      = 0x06
 	TAG_COMMIT     = 0x07
+    TAG_VOTE_GRANTED = 0x08
 )
