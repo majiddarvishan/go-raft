@@ -22,11 +22,6 @@ func New(cfg Config) *Node {
 	}
 }
 
-func (n *Node) Start() error {
-	n.server = transport.NewServer(n.cfg.Listen, n.handleMessage)
-	return n.server.Start()
-}
-
 func (n *Node) handleMessage(frame transport.Frame, conn any) {
 	// placeholder for next phase (consensus)
 }

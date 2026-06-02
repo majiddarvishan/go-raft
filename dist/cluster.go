@@ -4,7 +4,7 @@ type Cluster struct {
 	node *Node
 }
 
-func New(cfg Config) *Cluster {
+func NewCluster(cfg Config) *Cluster {
 	return &Cluster{
 		node: New(cfg),
 	}
