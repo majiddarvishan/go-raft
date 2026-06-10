@@ -1,6 +1,3 @@
-# ۱. extract
-tar -xzf authenticator.tar.gz && cd final
-
 # ۲. بالا آوردن با Docker (همه چیز خودکار)
 docker-compose up --build -d
 
