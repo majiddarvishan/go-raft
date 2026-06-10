@@ -1,0 +1,32 @@
+syntax = "proto3";
+package auth;
+import "api/proto/auth/common.proto";
+option go_package = "authenticator/api/proto/auth;auth";
+
+service ClusterService {
+  rpc Join             (JoinRequest)          returns (JoinResponse);
+  rpc Leave            (LeaveRequest)         returns (LeaveResponse);
+  rpc GetClusterStatus (ClusterStatusRequest) returns (ClusterStatusResponse);
+}
+
+message JoinRequest  { string node_id = 1; string raft_addr = 2; string grpc_addr = 3; }
+message JoinResponse { ErrorCode error_code = 1; string error_message = 2; }
+
+message LeaveRequest  { string node_id = 1; }
+message LeaveResponse { ErrorCode error_code = 1; string error_message = 2; }
+
+message ClusterStatusRequest {}
+message NodeInfo {
+  string node_id   = 1;
+  string raft_addr = 2;
+  string grpc_addr = 3;
+  bool   is_leader = 4;
+  string state     = 5;
+}
+message ClusterStatusResponse {
+  string           leader_id     = 1;
+  string           leader_grpc   = 2;
+  repeated NodeInfo nodes        = 3;
+  ErrorCode        error_code    = 4;
+  string           error_message = 5;
+}

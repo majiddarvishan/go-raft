@@ -1,0 +1,39 @@
+syntax = "proto3";
+package auth;
+import "api/proto/auth/common.proto";
+option go_package = "authenticator/api/proto/auth;auth";
+
+// ── ClientConfig ────────────────────────────────────────────────────────────
+message ClientConfig {
+  int64           id                              = 1;
+  string          system_id                       = 2;
+  string          password_hash                   = 3;
+  int32           max_connections                 = 4;
+  int32           tps_limit                       = 5;
+  string          submit_resp_message_id_type     = 6;
+  string          delivery_report_message_id_type = 7;
+}
+
+// ── ConfigService — مدیریت ClientConfig از طریق Raft ───────────────────────
+service ConfigService {
+  rpc UpsertClientConfig (UpsertClientConfigRequest)  returns (UpsertClientConfigResponse);
+  rpc DeleteClientConfig (DeleteClientConfigRequest)  returns (DeleteClientConfigResponse);
+  rpc GetClientConfig    (GetClientConfigRequest)     returns (GetClientConfigResponse);
+  rpc ListClientConfigs  (ListClientConfigsRequest)   returns (ListClientConfigsResponse);
+  rpc BootstrapConfigs   (BootstrapConfigsRequest)    returns (BootstrapConfigsResponse);
+}
+
+message UpsertClientConfigRequest  { ClientConfig config   = 1; }
+message UpsertClientConfigResponse { ErrorCode error_code  = 1; string error_message = 2; }
+
+message DeleteClientConfigRequest  { string system_id      = 1; }
+message DeleteClientConfigResponse { ErrorCode error_code  = 1; string error_message = 2; }
+
+message GetClientConfigRequest     { string system_id      = 1; }
+message GetClientConfigResponse    { ErrorCode error_code  = 1; string error_message = 2; ClientConfig config = 3; }
+
+message ListClientConfigsRequest   {}
+message ListClientConfigsResponse  { ErrorCode error_code  = 1; string error_message = 2; repeated ClientConfig configs = 3; }
+
+message BootstrapConfigsRequest    { repeated ClientConfig configs = 1; }
+message BootstrapConfigsResponse   { ErrorCode error_code  = 1; string error_message = 2; int32 loaded_count = 3; }

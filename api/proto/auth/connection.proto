@@ -1,0 +1,61 @@
+syntax = "proto3";
+package auth;
+import "api/proto/auth/common.proto";
+option go_package = "authenticator/api/proto/auth;auth";
+
+service ConnectionService {
+  rpc RegisterConnection       (RegisterConnectionRequest)       returns (RegisterConnectionResponse);
+  rpc UnregisterConnection     (UnregisterConnectionRequest)     returns (UnregisterConnectionResponse);
+  rpc UnregisterAllConnections (UnregisterAllConnectionsRequest) returns (UnregisterAllConnectionsResponse);
+  rpc ListConnections          (ListConnectionsRequest)          returns (ListConnectionsResponse);
+}
+
+message RegisterConnectionRequest {
+  string   requester_id = 1;
+  string   source_ip    = 2;
+  BindType bind_type    = 3;
+  string   system_id    = 4;
+  string   system_type  = 5;
+  int64    timestamp    = 6;
+}
+message RegisterConnectionResponse {
+  string    authenticator_id       = 1;
+  ErrorCode error_code             = 2;
+  string    error_message          = 3;
+  int32     active_connections     = 4;
+  int32     max_connections_allowed = 5;
+  int64     connection_id          = 6;
+}
+
+message UnregisterConnectionRequest {
+  string requester_id  = 1;
+  int64  connection_id = 2;
+  int64  timestamp     = 3;
+}
+message UnregisterConnectionResponse {
+  string    authenticator_id   = 1;
+  ErrorCode error_code         = 2;
+  string    error_message      = 3;
+  int32     active_connections = 4;
+}
+
+message UnregisterAllConnectionsRequest  { string requester_id = 1; int64 timestamp = 2; }
+message UnregisterAllConnectionsResponse { string authenticator_id = 1; ErrorCode error_code = 2; string error_message = 3; }
+
+message ListConnectionsRequest { string requester_id = 1; string system_id = 2; int64 timestamp = 3; }
+message ConnectionInfo {
+  int64    id               = 1;
+  int64    client_config_id = 2;
+  string   source_ip        = 3;
+  BindType bind_type        = 4;
+  int64    connected_at     = 5;
+  int64    disconnected_at  = 6;
+  string   authenticator_id = 7;
+  string   requester_id     = 8;
+}
+message ListConnectionsResponse {
+  string                authenticator_id = 1;
+  ErrorCode             error_code       = 2;
+  string                error_message    = 3;
+  repeated ConnectionInfo connections    = 4;
+}

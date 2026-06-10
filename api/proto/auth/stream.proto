@@ -1,0 +1,44 @@
+syntax = "proto3";
+package auth;
+import "api/proto/auth/common.proto";
+option go_package = "authenticator/api/proto/auth;auth";
+
+// ── ارتباط سرور → کلاینت ────────────────────────────────────────────────────
+service CommandStreamService {
+  // کلاینت subscribe می‌کند — سرور می‌تواند هر لحظه دستور push کند
+  rpc Subscribe (SubscribeRequest) returns (stream ServerCommand);
+  // admin/سرور دستور به یک یا همه کلاینت‌ها ارسال می‌کند
+  rpc Broadcast (BroadcastRequest) returns (BroadcastResponse);
+}
+
+enum ServerCommandType {
+  SERVER_COMMAND_UNKNOWN       = 0;
+  SERVER_COMMAND_PING          = 1;
+  SERVER_COMMAND_DISCONNECT    = 2;
+  SERVER_COMMAND_THROTTLE      = 3;
+  SERVER_COMMAND_RELOAD_CONFIG = 4;
+  SERVER_COMMAND_CUSTOM        = 99;
+}
+
+message SubscribeRequest {
+  string requester_id = 1;
+  string system_id    = 2;
+}
+
+message ServerCommand {
+  string            command_id = 1;
+  ServerCommandType type       = 2;
+  string            payload    = 3;
+  int64             timestamp  = 4;
+}
+
+message BroadcastRequest {
+  ServerCommandType type      = 1;
+  string            payload   = 2;
+  string            target_id = 3; // خالی = به همه کلاینت‌های subscribed
+}
+message BroadcastResponse {
+  ErrorCode error_code    = 1;
+  string    error_message = 2;
+  int32     sent_count    = 3;
+}

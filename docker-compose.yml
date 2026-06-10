@@ -1,0 +1,100 @@
+version: "3.9"
+
+networks:
+  auth-net:
+    driver: bridge
+
+volumes:
+  pg-data:
+  node1-data:
+  node2-data:
+  node3-data:
+
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    # image: postgres:16-alpine
+    image: postgres:17.4
+    hostname: postgres
+    environment:
+      POSTGRES_DB:       authenticator
+      POSTGRES_USER:     auth
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks: [auth-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth -d authenticator"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Node 1 (Leader — bootstrap) ─────────────────────────────────────────────
+  node1:
+    build: .
+    hostname: node1
+    environment:
+      NODE_ID:    node1
+      RAFT_BIND:  "0.0.0.0:7001"   # bind روی همه interface‌ها
+      RAFT_ADDR:  "node1:7001"      # advertise — نودهای دیگر از این استفاده می‌کنند
+      GRPC_ADDR:  "0.0.0.0:9001"
+      DATA_DIR:   /data
+      BOOTSTRAP:  "true"            # این نود cluster را bootstrap می‌کند
+      DB_DSN:     "postgres://auth:secret@postgres:5432/authenticator?sslmode=disable"
+    volumes:
+      - node1-data:/data
+    ports:
+      - "9001:9001"                 # gRPC — از host قابل دسترس
+    networks: [auth-net]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9001 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # ── Node 2 (Follower) ────────────────────────────────────────────────────────
+  node2:
+    build: .
+    hostname: node2
+    environment:
+      NODE_ID:    node2
+      RAFT_BIND:  "0.0.0.0:7002"
+      RAFT_ADDR:  "node2:7002"
+      GRPC_ADDR:  "0.0.0.0:9002"
+      DATA_DIR:   /data
+      JOIN_ADDR:  "node1:9001"      # به node1 join می‌کند
+      DB_DSN:     "postgres://auth:secret@postgres:5432/authenticator?sslmode=disable"
+    volumes:
+      - node2-data:/data
+    ports:
+      - "9002:9002"
+    networks: [auth-net]
+    depends_on:
+      node1:
+        condition: service_healthy
+
+  # ── Node 3 (Follower) ────────────────────────────────────────────────────────
+  node3:
+    build: .
+    hostname: node3
+    environment:
+      NODE_ID:    node3
+      RAFT_BIND:  "0.0.0.0:7003"
+      RAFT_ADDR:  "node3:7003"
+      GRPC_ADDR:  "0.0.0.0:9003"
+      DATA_DIR:   /data
+      JOIN_ADDR:  "node1:9001"
+      DB_DSN:     "postgres://auth:secret@postgres:5432/authenticator?sslmode=disable"
+    volumes:
+      - node3-data:/data
+    ports:
+      - "9003:9003"
+    networks: [auth-net]
+    depends_on:
+      node1:
+        condition: service_healthy
